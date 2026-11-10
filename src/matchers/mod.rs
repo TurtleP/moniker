@@ -7,27 +7,27 @@ mod thetvdb;
 mod tvmaze;
 
 #[derive(Debug, Clone, Default, Deserialize)]
-pub struct ShowResult {
+pub struct Series {
     pub name: String,
     pub id: u64,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
-pub struct EpisodeResult {
+pub struct Episode {
     pub name: String,
     pub number: u16,
     pub season: u16,
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct SearchResult {
-    pub show: ShowResult,
-    pub episodes: Vec<EpisodeResult>,
+pub struct SeriesMatch {
+    pub series: Series,
+    pub episodes: Vec<Episode>,
 }
 
 pub trait Backend {
     fn name(&self) -> &'static str;
-    async fn search(&self, client: &Client, query: &str) -> Result<Vec<SearchResult>>;
+    async fn search(&self, client: &Client, query: &str) -> Result<Vec<SeriesMatch>>;
 }
 
 #[derive(Clone, Copy)]
@@ -52,7 +52,7 @@ impl Provider {
         }
     }
 
-    pub async fn search(&self, client: &Client, query: &str) -> Result<Vec<SearchResult>> {
+    pub async fn search(&self, client: &Client, query: &str) -> Result<Vec<SeriesMatch>> {
         match self {
             Self::TVMaze(s) => s.search(client, query).await,
             Self::TheTvdb(s) => s.search(client, query).await,

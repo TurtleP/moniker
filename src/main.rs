@@ -3,14 +3,17 @@ use std::path::{Path, PathBuf};
 mod app;
 use app::App;
 
+mod state;
+mod files;
 mod keys;
+mod ui;
 
 mod config;
 use config::Config;
 
 mod logging;
 mod matchers;
-mod ui;
+mod _ui;
 
 use anyhow::Result;
 use clap::Parser;
