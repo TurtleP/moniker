@@ -1358,6 +1358,7 @@ dependencies = [
  "sanitize-filename",
  "serde",
  "serde_json",
+ "strum",
  "tokio",
  "toml",
  "tracing",

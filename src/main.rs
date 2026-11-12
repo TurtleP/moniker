@@ -13,7 +13,6 @@ use config::Config;
 
 mod logging;
 mod matchers;
-mod _ui;
 
 use anyhow::Result;
 use clap::Parser;

@@ -30,11 +30,17 @@ pub trait Backend {
     async fn search(&self, client: &Client, query: &str) -> Result<Vec<SeriesMatch>>;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum Provider {
     TVMaze(tvmaze::TVMaze),
     TheTvdb(thetvdb::TheTvdb),
     AniDb(anidb::AniDb),
+}
+
+impl Default for Provider {
+    fn default() -> Self {
+        Provider::TVMaze(tvmaze::TVMaze)
+    }
 }
 
 impl Provider {

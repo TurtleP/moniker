@@ -1,11 +1,12 @@
 use crate::{
-    keys, state::{MetadataState, WorkspaceState}, ui::create_list,
+    keys::Action,
+    state::{MetadataState, WorkspaceState},
+    ui::list,
 };
 
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
-    style::{Color, Stylize},
     widgets::{ListItem, Paragraph},
 };
 
@@ -15,14 +16,17 @@ pub struct Window {
     pub status_bar: Rect,
 }
 
+#[derive(Default)]
 pub enum MessageLevel {
+    #[default]
     Info,
-    Error
+    Error,
 }
 
+#[derive(Default)]
 pub struct Message {
     text: String,
-    level: MessageLevel
+    level: MessageLevel,
 }
 
 const VERTICAL_CONSTRAINTS: &[Constraint; 2] = &[Constraint::Min(0), Constraint::Length(1)];
@@ -51,8 +55,8 @@ pub fn render_workspace(frame: &mut Frame, area: Rect, workspace: &mut Workspace
         None => String::new(),
     };
 
-    let widget = create_list(items, title);
-    frame.render_stateful_widget(widget, area, &mut workspace.state);
+    let widget = list(items, title);
+    frame.render_stateful_widget(widget, area, &mut workspace.list_state);
 }
 
 pub fn render_rename(frame: &mut Frame, area: Rect, matches: &mut MetadataState) {
@@ -63,14 +67,10 @@ pub fn render_rename(frame: &mut Frame, area: Rect, matches: &mut MetadataState)
         .map(|e| ListItem::from(e.name.as_str()))
         .collect();
 
-    let widget = create_list(items, "Rename");
-    frame.render_stateful_widget(widget, area, &mut matches.state);
+    let widget = list(items, "Rename");
+    frame.render_stateful_widget(widget, area, &mut matches.list_state);
 }
 
-pub fn render_status_bar(frame: &mut Frame, area: Rect, message: &Message) {
-    let color = match message.level {
-        MessageLevel::Info => Color::LightCyan,
-        MessageLevel::Error => Color::LightRed
-    };
-    frame.render_widget(Paragraph::new(message.text.as_str()).fg(color), area);
+pub fn render_status_bar(frame: &mut Frame, area: Rect, text: &str) {
+    frame.render_widget(Paragraph::new(text), area);
 }

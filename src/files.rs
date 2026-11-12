@@ -3,32 +3,34 @@ use std::path::PathBuf;
 use anyhow::Result;
 use walkdir::WalkDir;
 
+use crate::state::WorkspaceState;
+
 #[derive(Debug)]
 pub struct FileEntry {
     pub path: PathBuf,
     pub display: String,
 }
 
-pub fn scan_directory(dir: &PathBuf) -> Result<Vec<FileEntry>> {
-    let mut files = Vec::<FileEntry>::new();
-    let filtered_dir = WalkDir::new(dir)
+pub fn scan_directory(workspace: &mut WorkspaceState, included: &[String]) -> Result<()> {
+    let directory = workspace.dir.clone();
+
+    let filtered_dir = WalkDir::new(&directory)
         .into_iter()
-        .filter_entry(|e| e.file_type().is_file());
+        .filter_map(|f| f.ok())
+        .filter(|entry| entry.file_type().is_file() && entry.path().extension().is_some());
 
     for entry in filtered_dir {
-        let entry = entry?;
         let entry_path = entry.path();
-        let extension = entry_path.extension();
-        let display = entry_path.strip_prefix(dir)?.to_string_lossy();
-        files.push(FileEntry {
-            path: PathBuf::from(entry_path),
-            display: String::from(display),
-        });
+        let display = entry_path.strip_prefix(&directory)?.to_string_lossy();
+        if included.iter().any(|f| display.ends_with(f)) {
+            workspace.files.push(FileEntry {
+                path: PathBuf::from(entry_path),
+                display: String::from(display),
+            });
+        }
     }
-    Ok(files)
+    Ok(())
 }
-
-pub fn filter_episodes() {}
 
 pub fn apply_config_format() {}
 

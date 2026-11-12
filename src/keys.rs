@@ -1,6 +1,9 @@
-use crossterm::event::KeyCode;
+use std::fmt::Display;
 
-#[derive(Clone, Copy)]
+use crossterm::event::KeyCode;
+use strum::Display;
+
+#[derive(Clone, Copy, PartialEq, Display)]
 pub(crate) enum Action {
     Quit,
     Rescan,
@@ -11,68 +14,105 @@ pub(crate) enum Action {
     Rename,
     ChangeSource,
     RenameAll,
+    Enter,
 }
 
-pub(crate) struct Binding {
-    pub(crate) keys: &'static [KeyCode],
-    pub(crate) label: &'static str,
-    pub(crate) desc: &'static str,
-    pub(crate) action: Action,
+pub struct KeyEvent {
+    pub keys: &'static [KeyCode],
+    pub action: Action,
 }
 
-pub(crate) const BINDINGS: &[Binding] = &[
+impl Display for KeyEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.action)
+    }
+}
+
+pub struct Binding {
+    pub event: KeyEvent,
+    pub label: &'static str,
+    pub desc: &'static str,
+}
+
+pub const BINDINGS: &[Binding] = &[
     Binding {
-        keys: &[KeyCode::Up, KeyCode::Char('k')],
+        event: KeyEvent {
+            keys: &[KeyCode::Up, KeyCode::Char('k')],
+            action: Action::Up,
+        },
         label: "↑ / k",
         desc: "Select previous file",
-        action: Action::Up,
     },
     Binding {
-        keys: &[KeyCode::Down, KeyCode::Char('j')],
+        event: KeyEvent {
+            keys: &[KeyCode::Down, KeyCode::Char('j')],
+            action: Action::Down,
+        },
         label: "↓ / j",
         desc: "Select next file",
-        action: Action::Down,
     },
     Binding {
-        keys: &[KeyCode::Char('r')],
+        event: KeyEvent {
+            keys: &[KeyCode::Char('r')],
+            action: Action::Rescan,
+        },
         label: "r",
         desc: "Rescan directory",
-        action: Action::Rescan,
     },
     Binding {
-        keys: &[KeyCode::F(1), KeyCode::Char('?')],
+        event: KeyEvent {
+            keys: &[KeyCode::F(1), KeyCode::Char('?')],
+            action: Action::ToggleHelp,
+        },
         label: "F1 / ?",
-        desc: "Toggle this help",
-        action: Action::ToggleHelp,
+        desc: "Toggle help",
     },
     Binding {
-        keys: &[KeyCode::Char('q')],
+        event: KeyEvent {
+            keys: &[KeyCode::Char('q')],
+            action: Action::Quit,
+        },
         label: "q",
         desc: "Quit",
-        action: Action::Quit,
     },
     Binding {
-        keys: &[KeyCode::Char('m'), KeyCode::Char('/')],
+        event: KeyEvent {
+            keys: &[KeyCode::Char('m'), KeyCode::Char('/')],
+            action: Action::Match,
+        },
         label: "m / /",
         desc: "Match with source",
-        action: Action::Match,
     },
     Binding {
-        keys: &[KeyCode::Char('n')],
+        event: KeyEvent {
+            keys: &[KeyCode::Enter],
+            action: Action::Enter,
+        },
+        label: "enter",
+        desc: "select item",
+    },
+    Binding {
+        event: KeyEvent {
+            keys: &[KeyCode::Char('n')],
+            action: Action::Rename,
+        },
         label: "n",
         desc: "Rename file",
-        action: Action::Rename,
     },
     Binding {
-        keys: &[KeyCode::Char('s')],
+        event: KeyEvent {
+            keys: &[KeyCode::Char('s')],
+            action: Action::ChangeSource,
+        },
         label: "s",
         desc: "Change source",
-        action: Action::ChangeSource,
     },
     Binding {
-        keys: &[KeyCode::Char('a')],
+        event: KeyEvent {
+            keys: &[KeyCode::Char('a')],
+            action: Action::RenameAll,
+        },
         label: "a",
         desc: "Rename all files",
-        action: Action::RenameAll,
     },
 ];
