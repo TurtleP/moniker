@@ -1,17 +1,17 @@
 use ratatui::{
     Frame,
     layout::Constraint,
+    widgets::ListState,
     widgets::{Clear, ListItem},
 };
 
 use crate::{
     keys::Action,
     matchers::Provider,
-    state::ProviderState,
-    ui::{PopupResult, dialog, dialog_sized, list},
+    ui::{PopupResult, dialog_sized, list},
 };
 
-pub fn render(frame: &mut Frame, state: &mut ProviderState) {
+pub fn render(frame: &mut Frame, list_state: &mut ListState) {
     let items: Vec<ListItem> = Provider::ALL
         .into_iter()
         .map(|source| ListItem::from(source.name()))
@@ -26,16 +26,20 @@ pub fn render(frame: &mut Frame, state: &mut ProviderState) {
     let list = list(items, "Sources");
 
     frame.render_widget(Clear, area);
-    frame.render_stateful_widget(list, area, &mut state.list_state);
+    frame.render_stateful_widget(list, area, list_state);
 }
 
-pub fn keypressed(action: &Action, state: &mut ProviderState) -> PopupResult {
+pub fn keypressed(
+    action: &Action,
+    list_state: &mut ListState,
+    provider: &mut Provider,
+) -> PopupResult {
     match action {
-        Action::Up => state.list_state.select_previous(),
-        Action::Down => state.list_state.select_next(),
+        Action::Up => list_state.select_previous(),
+        Action::Down => list_state.select_next(),
         Action::Enter => {
-            if let Some(selected) = state.list_state.selected() {
-                state.provider = Provider::ALL[selected];
+            if let Some(selected) = list_state.selected() {
+                *provider = Provider::ALL[selected];
             }
             return PopupResult::Close;
         }

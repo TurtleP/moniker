@@ -1,5 +1,5 @@
+use std::fs;
 use std::path::PathBuf;
-use std::{fs, path::Path};
 
 use anyhow::{Result, bail};
 use directories::ProjectDirs;
@@ -56,10 +56,6 @@ impl Config {
         }
         let contents = fs::read_to_string(path)?;
         Ok(toml::from_str(&contents)?)
-    }
-
-    pub fn format(&self) -> &str {
-        &self.general.format
     }
 
     pub fn save(&self) -> Result<()> {

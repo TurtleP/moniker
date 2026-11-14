@@ -1,31 +1,42 @@
 use std::path::PathBuf;
 
-use anyhow::Result;
 use ratatui::widgets::ListState;
-use reqwest::Client;
 
 use crate::config::Config;
 use crate::files::FileEntry;
 use crate::matchers::{Provider, SeriesMatch};
 
 #[derive(Default, Debug, PartialEq)]
-pub enum AppPopup {
+pub enum Dialog {
     #[default]
     None,
     Help,
-    Sources,
-    Match,
-    Shows,
+    Sources(ListState),
+    Search(ListState),
+    Shows(ListState),
 }
 
-fn list_state() -> ListState {
-    ListState::default().with_selected(Some(0))
+impl Dialog {
+    fn fresh_list() -> ListState {
+        ListState::default().with_selected(Some(0))
+    }
+
+    pub fn sources() -> Self {
+        Self::Sources(Self::fresh_list())
+    }
+    pub fn matches() -> Self {
+        Self::Search(Self::fresh_list())
+    }
+    pub fn shows() -> Self {
+        Self::Shows(Self::fresh_list())
+    }
 }
 
 #[derive(Debug)]
 pub struct WorkspaceState {
     pub dir: PathBuf,
     pub files: Vec<FileEntry>,
+    pub series: SeriesMatch,
     pub list_state: ListState,
 }
 
@@ -37,60 +48,24 @@ impl Default for WorkspaceState {
         Self {
             dir,
             files: Vec::new(),
-            list_state: list_state(),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct MetadataState {
-    pub series: SeriesMatch,
-    pub list_state: ListState,
-    pub search_query: String,
-}
-
-impl Default for MetadataState {
-    fn default() -> Self {
-        Self {
             series: SeriesMatch::default(),
-            list_state: list_state(),
-            search_query: String::new(),
+            list_state: ListState::default().with_selected(Some(0)),
         }
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-pub struct ProviderState {
-    pub provider: Provider,
-    pub list_state: ListState,
-}
-
-impl Default for ProviderState {
-    fn default() -> Self {
-        Self {
-            provider: Provider::default(),
-            list_state: list_state(),
-        }
-    }
-}
-
-impl ProviderState {
-    pub async fn search(&self, client: &Client, query: &String) -> Result<Vec<SeriesMatch>> {
-        self.provider.search(&client, query).await
-    }
-}
-
-#[derive(Default, Debug)]
-pub struct DialogState {
-    pub popup: AppPopup,
+#[derive(Default, Clone, Debug)]
+pub struct SearchState {
+    pub query: String,
+    pub results: Vec<SeriesMatch>,
 }
 
 #[derive(Default, Debug)]
 pub struct AppState {
     pub workspace: WorkspaceState,
-    pub metadata: MetadataState,
-    pub provider: ProviderState,
-    pub dialog: DialogState,
+    pub provider: Provider,
+    pub search: SearchState,
+    pub dialog: Dialog,
     pub config: Config,
 }
 

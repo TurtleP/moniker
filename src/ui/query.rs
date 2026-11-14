@@ -3,29 +3,28 @@ use ratatui::{Frame, layout::Constraint, widgets::Clear};
 
 use crate::{
     keys::Action,
-    state::MetadataState,
     ui::{PopupResult, dialog_sized, input, panel},
 };
 
-pub fn render(frame: &mut Frame, state: &mut MetadataState) {
+pub fn render(frame: &mut Frame, search_query: &mut String) {
     let area = dialog_sized(frame, Constraint::Percentage(50), Constraint::Length(3));
-    let input = input(&state.search_query).block(panel("Match"));
+    let input = input(&search_query).block(panel("Match"));
 
     frame.render_widget(Clear, area);
     frame.render_widget(input, area);
 }
 
-pub fn send_input(key: &KeyCode, state: &mut MetadataState) {
+pub fn send_input(key: &KeyCode, search_query: &mut String) {
     match key {
-        KeyCode::Char(ch) => state.search_query.push(*ch),
+        KeyCode::Char(ch) => search_query.push(*ch),
         KeyCode::Backspace => {
-            state.search_query.pop();
+            search_query.pop();
         }
         _ => {}
     }
 }
 
-pub fn keypressed(action: &Action, state: &mut MetadataState) -> PopupResult {
+pub fn keypressed(action: &Action) -> PopupResult {
     if matches!(action, Action::Enter) {
         return PopupResult::Close;
     }

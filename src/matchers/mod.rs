@@ -11,7 +11,6 @@ pub struct Series {
     pub name: String,
     pub id: u64,
 }
-
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct Episode {
     pub name: String,
