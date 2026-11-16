@@ -3,9 +3,9 @@ use std::path::{Path, PathBuf};
 mod app;
 use app::App;
 
-mod state;
 mod files;
 mod keys;
+mod state;
 mod ui;
 
 mod config;
@@ -17,7 +17,7 @@ mod matchers;
 use anyhow::Result;
 use clap::Parser;
 
-#[derive(Debug, Parser)]
+#[derive(Parser)]
 struct Cli {
     #[arg(short, long)]
     dir: Option<PathBuf>,

@@ -16,7 +16,7 @@ where
     Ok(date.and_then(|d| d.get(..4)?.parse().ok()))
 }
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Clone, Default, Deserialize)]
 pub struct Series {
     pub name: String,
     pub id: u64,
@@ -32,14 +32,14 @@ impl Display for Series {
     }
 }
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Default, Clone, Deserialize)]
 pub struct Episode {
     pub name: String,
     pub number: u16,
     pub season: u16,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Default, Clone)]
 pub struct SeriesMatch {
     pub series: Series,
     pub episodes: Vec<Episode>,
@@ -56,7 +56,7 @@ pub trait Backend {
     async fn search(&self, client: &Client, query: &str) -> Result<Vec<SeriesMatch>>;
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum Provider {
     TVMaze(tvmaze::TVMaze),
     TheTvdb(thetvdb::TheTvdb),

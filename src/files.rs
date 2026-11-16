@@ -3,10 +3,15 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use walkdir::WalkDir;
 
-#[derive(Debug)]
 pub struct FileEntry {
     pub path: PathBuf,
     pub display: String,
+}
+
+impl std::fmt::Display for FileEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.display)
+    }
 }
 
 fn get_file_info(root: &String, path: &Path) -> Result<(String, String)> {
@@ -38,7 +43,7 @@ pub fn scan_directory(directory: &PathBuf, included: &[String]) -> Result<Vec<Fi
         {
             files.push(FileEntry {
                 path: PathBuf::from(entry_path),
-                display: String::from(display),
+                display: display,
             });
         }
     }

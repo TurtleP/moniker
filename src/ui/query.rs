@@ -12,7 +12,7 @@ use crate::{
 
 pub fn render(frame: &mut Frame, search_query: &mut String) {
     let area = dialog_sized(frame, Constraint::Percentage(50), Constraint::Length(3));
-    let input = input(&search_query).block(panel("Match"));
+    let input = input(search_query).block(panel("Match"));
 
     let x = (area.x + 1).saturating_add(search_query.len() as u16);
     let cursor_position = Position::new(x, area.y + 1);

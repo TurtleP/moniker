@@ -6,7 +6,7 @@ use crate::config::Config;
 use crate::files::FileEntry;
 use crate::matchers::{Provider, SeriesMatch};
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, PartialEq)]
 pub enum Dialog {
     #[default]
     None,
@@ -32,7 +32,6 @@ impl Dialog {
     }
 }
 
-#[derive(Debug)]
 pub struct WorkspaceState {
     pub dir: PathBuf,
     pub files: Vec<FileEntry>,
@@ -54,14 +53,13 @@ impl Default for WorkspaceState {
     }
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default)]
 pub struct SearchState {
     pub query: String,
     pub results: Vec<SeriesMatch>,
-    pub char_index: usize,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct AppState {
     pub workspace: WorkspaceState,
     pub provider: Provider,
@@ -73,7 +71,7 @@ pub struct AppState {
 impl AppState {
     pub fn new(config: Config) -> Self {
         Self {
-            config: config,
+            config,
             ..AppState::default()
         }
     }

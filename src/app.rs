@@ -17,11 +17,10 @@ use crate::{
     ui::{self, PopupResult, help, layout, provider, query, shows},
 };
 
-#[derive(Debug)]
 pub struct App {
-    exit: bool,
     state: AppState,
     client: Client,
+    exit: bool,
 }
 
 static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
@@ -40,9 +39,9 @@ impl App {
         };
 
         Ok(Self {
-            exit: false,
             state,
             client,
+            exit: false,
         })
     }
 
@@ -63,7 +62,7 @@ impl App {
     }
 
     fn render(&mut self, frame: &mut Frame) {
-        let window = layout::create_layout(&frame);
+        let window = layout::create_layout(frame);
         layout::render_workspace(frame, window.files_list, &mut self.state.workspace);
         layout::render_rename(frame, window.rename_list, &mut self.state.workspace);
 
@@ -107,12 +106,12 @@ impl App {
     async fn popup_keypressed(&mut self, action: &Action) -> Result<()> {
         let result = match &mut self.state.dialog {
             Dialog::None => {
-                self.keypressed(&action)?;
+                self.keypressed(action)?;
                 PopupResult::Consume
             }
-            Dialog::Help => help::keypressed(&action),
+            Dialog::Help => help::keypressed(action),
             Dialog::Sources(list_state) => {
-                provider::keypressed(&action, list_state, &mut self.state.provider)
+                provider::keypressed(action, list_state, &mut self.state.provider)
             }
             Dialog::Search(_) => query::keypressed(action),
             Dialog::Shows(list_state) => shows::keypressed(action, list_state),
@@ -167,7 +166,7 @@ impl App {
                 .find(|b| b.event.keys.contains(&key_event.code))
                 .map(|b| &b.event.action)
             {
-                self.popup_keypressed(&action).await?;
+                self.popup_keypressed(action).await?;
             }
         }
         Ok(())

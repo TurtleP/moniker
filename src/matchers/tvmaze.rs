@@ -6,17 +6,17 @@ use tracing::info;
 
 use crate::matchers::{Backend, Episode, Series, SeriesMatch, year_from_date};
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct TVMaze;
 
 const TVMAZE_API_URL: &str = "https://api.tvmaze.com";
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 struct SearchHit {
     show: TvMazeShow,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 struct TvMazeShow {
     id: u64,
     name: String,

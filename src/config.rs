@@ -5,7 +5,7 @@ use anyhow::{Result, bail};
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Config {
     pub general: General,
     pub api_keys: ApiKeys,
@@ -25,13 +25,13 @@ impl Default for Config {
     }
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Default, Deserialize, Serialize)]
 pub struct General {
     pub files: Vec<String>,
     pub format: String,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct ApiKeys {
     pub thetvdb: String,
