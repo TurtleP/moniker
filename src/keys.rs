@@ -15,6 +15,7 @@ pub(crate) enum Action {
     ChangeSource,
     RenameAll,
     Enter,
+    Back,
 }
 
 pub struct KeyEvent {
@@ -61,6 +62,14 @@ pub const BINDINGS: &[Binding] = &[
     },
     Binding {
         event: KeyEvent {
+            keys: &[KeyCode::Esc],
+            action: Action::Back,
+        },
+        label: "Esc",
+        desc: "Go back",
+    },
+    Binding {
+        event: KeyEvent {
             keys: &[KeyCode::F(1), KeyCode::Char('?')],
             action: Action::ToggleHelp,
         },
@@ -89,7 +98,7 @@ pub const BINDINGS: &[Binding] = &[
             action: Action::Enter,
         },
         label: "enter",
-        desc: "select item",
+        desc: "Confirm",
     },
     Binding {
         event: KeyEvent {

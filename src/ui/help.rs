@@ -29,7 +29,7 @@ pub fn render(frame: &mut Frame) {
 
 pub fn keypressed(action: &Action) -> PopupResult {
     match action {
-        Action::Quit | Action::ToggleHelp => PopupResult::Close,
+        Action::Back | Action::ToggleHelp => PopupResult::Close,
         _ => PopupResult::Consume,
     }
 }

@@ -1,16 +1,37 @@
+use std::fmt::Display;
+
 use anyhow::Result;
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 
 mod anidb;
 mod thetvdb;
 mod tvmaze;
 
+pub fn year_from_date<'de, D>(deserializer: D) -> Result<Option<u16>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let date: Option<String> = Option::deserialize(deserializer)?;
+    Ok(date.and_then(|d| d.get(..4)?.parse().ok()))
+}
+
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct Series {
     pub name: String,
     pub id: u64,
+    pub year: Option<u16>,
 }
+
+impl Display for Series {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.year {
+            Some(year) => write!(f, "{} ({year})", self.name),
+            None => write!(f, "{}", self.name),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct Episode {
     pub name: String,
@@ -22,6 +43,12 @@ pub struct Episode {
 pub struct SeriesMatch {
     pub series: Series,
     pub episodes: Vec<Episode>,
+}
+
+impl Display for SeriesMatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.series.name)
+    }
 }
 
 pub trait Backend {

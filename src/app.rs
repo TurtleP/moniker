@@ -7,13 +7,14 @@ use crossterm::event::{
 };
 use ratatui::{DefaultTerminal, Frame};
 use reqwest::Client;
+use tracing::info;
 
 use crate::{
     config::Config,
     files,
     keys::{Action, BINDINGS},
     state::{AppState, Dialog},
-    ui::{self, PopupResult, help, layout, provider, query},
+    ui::{self, PopupResult, help, layout, provider, query, shows},
 };
 
 #[derive(Debug)]
@@ -73,6 +74,9 @@ impl App {
             Dialog::Help => help::render(frame),
             Dialog::Sources(list_state) => provider::render(frame, list_state),
             Dialog::Search(_) => query::render(frame, &mut self.state.search.query),
+            Dialog::Shows(list_state) => {
+                shows::render(frame, list_state, &self.state.search.results)
+            }
             _ => {}
         };
     }
@@ -92,6 +96,7 @@ impl App {
                 }
             }
             _ => {
+                info!("Showing popup..");
                 self.state.search.results = result;
                 self.display_popup(Dialog::shows());
             }
@@ -110,12 +115,22 @@ impl App {
                 provider::keypressed(&action, list_state, &mut self.state.provider)
             }
             Dialog::Search(_) => query::keypressed(action),
-            _ => todo!("Binding '{}'", action),
+            Dialog::Shows(list_state) => shows::keypressed(action, list_state),
         };
-        if result == PopupResult::Close {
-            if matches!(self.state.dialog, Dialog::Search(_)) {
-                self.search_for_series().await?;
+        if matches!(result, PopupResult::Confirm) {
+            match self.state.dialog {
+                Dialog::Search(_) => self.search_for_series().await?,
+                Dialog::Shows(state) => {
+                    if let Some(selection) = state.selected() {
+                        let series = self.state.search.results[selection].clone();
+                        info!("Selected {}", series);
+                        self.state.workspace.series = series;
+                    }
+                    self.display_popup(Dialog::None);
+                }
+                _ => self.display_popup(Dialog::None),
             }
+        } else if matches!(result, PopupResult::Close) {
             self.display_popup(Dialog::None);
         }
         Ok(())

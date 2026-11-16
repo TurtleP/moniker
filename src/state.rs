@@ -58,6 +58,7 @@ impl Default for WorkspaceState {
 pub struct SearchState {
     pub query: String,
     pub results: Vec<SeriesMatch>,
+    pub char_index: usize,
 }
 
 #[derive(Default, Debug)]

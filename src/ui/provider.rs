@@ -41,8 +41,9 @@ pub fn keypressed(
             if let Some(selected) = list_state.selected() {
                 *provider = Provider::ALL[selected];
             }
-            return PopupResult::Close;
+            return PopupResult::Confirm;
         }
+        Action::Back => return PopupResult::Close,
         _ => {}
     }
     PopupResult::Consume

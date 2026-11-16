@@ -9,10 +9,12 @@ pub mod help;
 pub mod layout;
 pub mod provider;
 pub mod query;
+pub mod shows;
 
 #[derive(PartialEq, Eq)]
 pub enum PopupResult {
     Consume,
+    Confirm,
     Close,
 }
 
