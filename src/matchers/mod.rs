@@ -37,6 +37,13 @@ pub struct Episode {
     pub name: String,
     pub number: u16,
     pub season: u16,
+    pub display: String,
+}
+
+impl Display for Episode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "S{:02}E{:02} - {}", self.season, self.number, self.name)
+    }
 }
 
 #[derive(Default, Clone)]

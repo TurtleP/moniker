@@ -58,6 +58,10 @@ impl Config {
         Ok(toml::from_str(&contents)?)
     }
 
+    pub fn format(&self) -> &String {
+        &self.general.format
+    }
+
     pub fn save(&self) -> Result<()> {
         let Some(path) = config_path() else {
             return Ok(());

@@ -1,11 +1,28 @@
-use std::path::{Path, PathBuf};
+use std::{
+    ffi::OsString,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Result;
+use infer::MatcherType;
+use tracing::info;
 use walkdir::WalkDir;
 
+use crate::matchers::{Episode, SeriesMatch};
+
+#[derive(Clone)]
 pub struct FileEntry {
     pub path: PathBuf,
     pub display: String,
+}
+
+impl FileEntry {
+    pub fn new(path: &Path, display: String) -> Self {
+        Self {
+            path: PathBuf::from(path),
+            display,
+        }
+    }
 }
 
 impl std::fmt::Display for FileEntry {
@@ -14,42 +31,79 @@ impl std::fmt::Display for FileEntry {
     }
 }
 
-fn get_file_info(root: &String, path: &Path) -> Result<(String, String)> {
-    let display = path.strip_prefix(root)?.to_string_lossy().into_owned();
-    let extension = match path.extension() {
-        Some(extension) => extension.to_string_lossy().into_owned(),
-        None => return Err(anyhow::anyhow!("File has no extension")),
-    };
-    Ok((display, extension))
+pub fn filter_results(files: &[FileEntry], episodes: &[Episode]) -> Vec<Episode> {
+    episodes
+        .iter()
+        .filter(|r| {
+            let by_season = format!("S{:02}E{:02}", r.season, r.number);
+            let by_name = &r.name;
+            files
+                .iter()
+                .any(|f| f.display.contains(&by_season) || f.display.contains(by_name))
+        })
+        .cloned()
+        .collect()
 }
 
-pub fn scan_directory(directory: &PathBuf, included: &[String]) -> Result<Vec<FileEntry>> {
+pub fn scan_directory(directory: &PathBuf) -> Result<Vec<FileEntry>> {
     let mut files = Vec::new();
-    let root = directory.to_string_lossy().into_owned();
+    let root = directory.display().to_string();
 
     let filtered_dir = WalkDir::new(&root)
         .into_iter()
         .filter_map(|f| f.ok())
-        .filter(|entry| entry.file_type().is_file());
+        .filter(|e| e.file_type().is_file());
 
     for entry in filtered_dir {
         let entry_path = entry.path();
-        let Ok((display, extension)) = get_file_info(&root, entry_path) else {
+        let Some(v) = infer::get_from_path(entry_path)? else {
             continue;
         };
-        if included
-            .iter()
-            .any(|f| extension.trim_start_matches('.') == *f)
-        {
-            files.push(FileEntry {
-                path: PathBuf::from(entry_path),
-                display: display,
-            });
+        if !matches!(v.matcher_type(), MatcherType::Video) {
+            continue;
         }
+        let display = entry_path.strip_prefix(directory)?.display().to_string();
+        files.push(FileEntry::new(entry_path, display));
     }
     Ok(files)
 }
 
-pub fn apply_config_format() {}
+pub fn apply_config_format(format: &str, series: &mut SeriesMatch) {
+    for episode in &mut series.episodes {
+        let title = episode.name.clone();
+        episode.display = format
+            .replace(
+                "{s00e00}",
+                &format!("S{:02}E{:02}", episode.season, episode.number),
+            )
+            .replace("{n}", &series.series.name)
+            .replace("{t}", &title)
+            .replace("{s}", &episode.season.to_string())
+            .replace("{e}", &episode.number.to_string());
+        info!("Renamed {episode}");
+    }
+}
 
-pub fn rename_files() {}
+pub fn rename_files(files: &mut Vec<FileEntry>, series: &mut SeriesMatch) -> Result<()> {
+    for (local, remote) in files.iter().zip(series.episodes.iter()) {
+        let Some(extension) = local.path.extension() else {
+            continue;
+        };
+
+        let stem = sanitize_filename::sanitize(&remote.display);
+        if stem.is_empty() {
+            continue;
+        }
+
+        let mut filename = OsString::from(stem);
+        filename.push(".");
+        filename.push(extension);
+
+        let target = local.path.with_file_name(filename);
+        if std::fs::exists(&target)? {
+            continue;
+        }
+        std::fs::rename(&local.path, &target)?;
+    }
+    Ok(())
+}

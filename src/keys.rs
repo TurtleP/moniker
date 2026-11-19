@@ -106,7 +106,7 @@ pub const BINDINGS: &[Binding] = &[
             action: Action::Rename,
         },
         label: "n",
-        desc: "Rename file",
+        desc: "Rename files",
     },
     Binding {
         event: KeyEvent {

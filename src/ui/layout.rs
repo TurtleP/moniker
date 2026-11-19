@@ -1,5 +1,6 @@
-use crate::{state::WorkspaceState, ui::list};
+use crate::{files::FileEntry, matchers::Episode, state::WorkspaceState, ui::list};
 
+use anyhow::Result;
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
@@ -47,7 +48,7 @@ pub fn render_rename(frame: &mut Frame, area: Rect, workspace: &mut WorkspaceSta
         .series
         .episodes
         .iter()
-        .map(|e| ListItem::from(e.name.as_str()))
+        .map(|e| ListItem::from(e.display.clone()))
         .collect();
 
     let widget = list(items, "Rename");

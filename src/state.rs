@@ -14,6 +14,10 @@ pub enum Dialog {
     Sources(ListState),
     Search(ListState),
     Shows(ListState),
+    Message {
+        title: String,
+        body: String,
+    },
 }
 
 impl Dialog {
@@ -24,11 +28,23 @@ impl Dialog {
     pub fn sources() -> Self {
         Self::Sources(Self::fresh_list())
     }
+
     pub fn matches() -> Self {
         Self::Search(Self::fresh_list())
     }
+
     pub fn shows() -> Self {
         Self::Shows(Self::fresh_list())
+    }
+
+    pub fn message(title: impl Into<String>, body: Vec<impl Into<String>>) -> Self {
+        let lines: Vec<String> = body.into_iter().map(Into::into).collect();
+        let body = lines.join("\n");
+
+        Self::Message {
+            title: title.into(),
+            body,
+        }
     }
 }
 

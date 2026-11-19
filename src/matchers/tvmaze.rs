@@ -34,6 +34,24 @@ impl From<TvMazeShow> for Series {
     }
 }
 
+#[derive(Deserialize)]
+struct TvMazeEpisode {
+    name: String,
+    number: u16,
+    season: u16,
+}
+
+impl From<TvMazeEpisode> for Episode {
+    fn from(value: TvMazeEpisode) -> Self {
+        Self {
+            name: value.name,
+            number: value.number,
+            season: value.season,
+            display: String::new(),
+        }
+    }
+}
+
 impl TVMaze {
     async fn get_series_id(&self, client: &Client, query: &str) -> Result<Vec<Series>> {
         info!("Searching for show: {query}");
@@ -48,7 +66,8 @@ impl TVMaze {
 
     async fn get_show_episodes(&self, client: &Client, show_id: u64) -> Result<Vec<Episode>> {
         let url = reqwest::Url::parse(&format!("{TVMAZE_API_URL}/shows/{show_id}/episodes"))?;
-        Ok(client.get(url).send().await?.json().await?)
+        let episodes: Vec<TvMazeEpisode> = client.get(url).send().await?.json().await?;
+        Ok(episodes.into_iter().map(|e| e.into()).collect())
     }
 }
 

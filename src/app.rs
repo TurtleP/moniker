@@ -14,7 +14,7 @@ use crate::{
     files,
     keys::{Action, BINDINGS},
     state::{AppState, Dialog},
-    ui::{self, PopupResult, help, layout, provider, query, shows},
+    ui::{self, PopupResult, help, layout, message, provider, query, shows},
 };
 
 pub struct App {
@@ -46,9 +46,8 @@ impl App {
     }
 
     pub fn rescan_directory(&mut self) -> Result<()> {
-        let included_files = self.state.config.general.files.clone();
         let directory = &self.state.workspace.dir;
-        self.state.workspace.files = files::scan_directory(directory, &included_files)?;
+        self.state.workspace.files = files::scan_directory(directory)?;
         Ok(())
     }
 
@@ -76,6 +75,7 @@ impl App {
             Dialog::Shows(list_state) => {
                 shows::render(frame, list_state, &self.state.search.results)
             }
+            Dialog::Message { title, body } => message::render(frame, title, body),
             _ => {}
         };
     }
@@ -103,6 +103,13 @@ impl App {
         Ok(())
     }
 
+    fn apply_config_format(&mut self) {
+        let files = &self.state.workspace.files;
+        let episodes = self.state.workspace.series.episodes.clone();
+        self.state.workspace.series.episodes = files::filter_results(files, &episodes);
+        files::apply_config_format(self.state.config.format(), &mut self.state.workspace.series);
+    }
+
     async fn popup_keypressed(&mut self, action: &Action) -> Result<()> {
         let result = match &mut self.state.dialog {
             Dialog::None => {
@@ -115,6 +122,7 @@ impl App {
             }
             Dialog::Search(_) => query::keypressed(action),
             Dialog::Shows(list_state) => shows::keypressed(action, list_state),
+            Dialog::Message { title, body } => message::keypressed(action),
         };
         if matches!(result, PopupResult::Confirm) {
             match self.state.dialog {
@@ -126,6 +134,7 @@ impl App {
                         self.state.workspace.series = series;
                     }
                     self.display_popup(Dialog::None);
+                    self.apply_config_format();
                 }
                 _ => self.display_popup(Dialog::None),
             }
@@ -145,7 +154,12 @@ impl App {
                 self.state.search.query.clear();
                 self.display_popup(Dialog::matches())
             }
-            Action::Rename => {}
+            Action::Rename => {
+                let mut files_list = self.state.workspace.files.clone();
+                let mut series_match = self.state.workspace.series.clone();
+                files::rename_files(&mut files_list, &mut series_match);
+                self.rescan_directory()?;
+            }
             Action::Down => self.state.workspace.list_state.select_next(),
             Action::Up => self.state.workspace.list_state.select_previous(),
             _ => {}
