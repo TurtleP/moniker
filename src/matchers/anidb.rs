@@ -1,9 +1,9 @@
-use crate::matchers::{Backend, SearchResult};
+use crate::matchers::{Backend, SeriesMatch};
 
 use anyhow::Result;
 use reqwest::Client;
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub struct AniDb;
 
 impl Backend for AniDb {
@@ -11,7 +11,7 @@ impl Backend for AniDb {
         "AniDB"
     }
 
-    async fn search(&self, client: &Client, query: &str) -> Result<Vec<SearchResult>> {
+    async fn search(&self, _client: &Client, _query: &str) -> Result<Vec<SeriesMatch>> {
         Ok(Vec::new())
     }
 }

@@ -5,28 +5,37 @@ use anyhow::{Result, bail};
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(default, deny_unknown_fields)]
+#[derive(Deserialize, Serialize)]
 pub struct Config {
     pub general: General,
+    pub api_keys: ApiKeys,
 }
+
+const DEFAULT_FILES: &[&str; 3] = &["mkv", "mp4", "avi"];
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             general: General {
-                files: vec!["mkv".to_string(), "mp4".to_string()],
+                files: DEFAULT_FILES.map(String::from).to_vec(),
                 format: "{n} - {s00e00} - {t}".to_string(),
             },
+            api_keys: ApiKeys::default(),
         }
     }
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(default, deny_unknown_fields)]
+#[derive(Default, Deserialize, Serialize)]
 pub struct General {
     pub files: Vec<String>,
     pub format: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(default)]
+pub struct ApiKeys {
+    pub thetvdb: String,
+    pub anidb: String,
 }
 
 const CONFIG_FILE: &str = "config.toml";
@@ -49,12 +58,8 @@ impl Config {
         Ok(toml::from_str(&contents)?)
     }
 
-    pub fn format(&self) -> &str {
+    pub fn format(&self) -> &String {
         &self.general.format
-    }
-
-    pub fn filter(&self, file: &str) -> bool {
-        self.general.files.iter().any(|ext| file.ends_with(ext))
     }
 
     pub fn save(&self) -> Result<()> {
