@@ -122,7 +122,7 @@ impl App {
             }
             Dialog::Search(_) => query::keypressed(action),
             Dialog::Shows(list_state) => shows::keypressed(action, list_state),
-            Dialog::Message { title, body } => message::keypressed(action),
+            Dialog::Message { title: _, body: _ } => message::keypressed(action),
         };
         if matches!(result, PopupResult::Confirm) {
             match self.state.dialog {
@@ -157,7 +157,7 @@ impl App {
             Action::Rename => {
                 let mut files_list = self.state.workspace.files.clone();
                 let mut series_match = self.state.workspace.series.clone();
-                files::rename_files(&mut files_list, &mut series_match);
+                files::rename_files(&mut files_list, &mut series_match)?;
                 self.rescan_directory()?;
             }
             Action::Down => self.state.workspace.list_state.select_next(),

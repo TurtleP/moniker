@@ -1,6 +1,5 @@
-use crate::{files::FileEntry, matchers::Episode, state::WorkspaceState, ui::list};
+use crate::{state::WorkspaceState, ui::list};
 
-use anyhow::Result;
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},

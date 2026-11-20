@@ -1,6 +1,6 @@
 use crate::{
     keys::Action,
-    ui::{PopupResult, dialog, dialog_sized, panel},
+    ui::{PopupResult, dialog_sized, panel},
 };
 
 use ratatui::{
@@ -21,5 +21,8 @@ pub fn render(frame: &mut Frame, title: &str, text: &String) {
 }
 
 pub fn keypressed(action: &Action) -> PopupResult {
-    PopupResult::Close
+    match action {
+        Action::Enter => PopupResult::Close,
+        _ => PopupResult::Consume,
+    }
 }
