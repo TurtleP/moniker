@@ -10,7 +10,7 @@ use crate::{
     ui::{PopupResult, dialog_sized, input, panel},
 };
 
-pub fn render(frame: &mut Frame, search_query: &mut String) {
+pub fn render(frame: &mut Frame, search_query: &mut str) {
     let area = dialog_sized(frame, Constraint::Percentage(50), Constraint::Length(3));
     let input = input(search_query).block(panel("Match"));
 

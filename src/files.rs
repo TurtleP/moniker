@@ -84,7 +84,7 @@ pub fn apply_config_format(format: &str, series: &mut SeriesMatch) {
     }
 }
 
-pub fn rename_files(files: &mut Vec<FileEntry>, series: &mut SeriesMatch) -> Result<()> {
+pub fn rename_files(files: &mut [FileEntry], series: &mut SeriesMatch) -> Result<()> {
     for (local, remote) in files.iter().zip(series.episodes.iter()) {
         let Some(extension) = local.path.extension() else {
             continue;
