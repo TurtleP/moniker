@@ -62,7 +62,10 @@ pub fn scan_directory(directory: &PathBuf) -> Result<Vec<FileEntry>> {
         if !matches!(v.matcher_type(), MatcherType::Video) {
             continue;
         }
-        let display = entry_path.strip_prefix(directory)?.display().to_string();
+        let display = match entry_path.strip_prefix(directory) {
+            Ok(v) => v.with_extension("").display().to_string(),
+            Err(_) => continue,
+        };
         files.push(FileEntry::new(entry_path, display));
     }
     Ok(files)
@@ -84,26 +87,24 @@ pub fn apply_config_format(format: &str, series: &mut SeriesMatch) {
     }
 }
 
-pub fn rename_files(files: &mut [FileEntry], series: &mut SeriesMatch) -> Result<()> {
-    for (local, remote) in files.iter().zip(series.episodes.iter()) {
-        let Some(extension) = local.path.extension() else {
-            continue;
-        };
+pub fn rename_file(file: &mut FileEntry, series: &str, episode: &Episode) -> Result<bool> {
+    let Some(extension) = file.path.extension() else {
+        return Ok(false);
+    };
 
-        let stem = sanitize_filename::sanitize(&remote.display);
-        if stem.is_empty() {
-            continue;
-        }
-
-        let mut filename = OsString::from(stem);
-        filename.push(".");
-        filename.push(extension);
-
-        let target = local.path.with_file_name(filename);
-        if std::fs::exists(&target)? {
-            continue;
-        }
-        std::fs::rename(&local.path, &target)?;
+    let stem = sanitize_filename::sanitize(&episode.display);
+    if stem.is_empty() {
+        return Ok(false);
     }
-    Ok(())
+
+    let mut filename = OsString::from(stem);
+    filename.push(".");
+    filename.push(extension);
+
+    let target = file.path.with_file_name(filename);
+    if std::fs::exists(&target)? {
+        return Ok(false);
+    }
+    std::fs::rename(&file.path, &target)?;
+    Ok(true)
 }

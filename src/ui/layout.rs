@@ -3,8 +3,10 @@ use crate::{state::WorkspaceState, ui::list};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
+    style::{Color, Stylize},
     widgets::{ListItem, Paragraph},
 };
+use tracing::info;
 
 pub struct Window {
     pub files_list: Rect,
@@ -47,7 +49,14 @@ pub fn render_rename(frame: &mut Frame, area: Rect, workspace: &mut WorkspaceSta
         .series
         .episodes
         .iter()
-        .map(|e| ListItem::from(e.display.clone()))
+        .map(|e| {
+            let item = ListItem::from(e.display.clone());
+            if workspace.is_matched(e) {
+                item.fg(Color::Green)
+            } else {
+                item
+            }
+        })
         .collect();
 
     let widget = list(items, "Rename");

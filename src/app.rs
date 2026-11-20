@@ -48,6 +48,7 @@ impl App {
     pub fn rescan_directory(&mut self) -> Result<()> {
         let directory = &self.state.workspace.dir;
         self.state.workspace.files = files::scan_directory(directory)?;
+        self.state.workspace.rebuild_match_index();
         Ok(())
     }
 
@@ -88,14 +89,16 @@ impl App {
         let query = self.state.search.query.clone();
         let mut result = self.state.provider.search(&self.client, &query).await?;
         match result.len() {
-            0 => {}
+            0 => self.display_popup(Dialog::info(vec!["No results found!"])),
             1 => {
                 if let Some(series) = result.pop() {
-                    self.state.search.results.push(series);
+                    info!("{series}");
+                    self.state.workspace.series = series;
+                    self.apply_config_format();
+                    self.display_popup(Dialog::None);
                 }
             }
             _ => {
-                info!("Showing popup..");
                 self.state.search.results = result;
                 self.display_popup(Dialog::shows());
             }
@@ -130,7 +133,7 @@ impl App {
                 Dialog::Shows(state) => {
                     if let Some(selection) = state.selected() {
                         let series = self.state.search.results[selection].clone();
-                        info!("Selected {}", series);
+                        info!("Selected {series}");
                         self.state.workspace.series = series;
                     }
                     self.display_popup(Dialog::None);
@@ -156,9 +159,23 @@ impl App {
             }
             Action::Rename => {
                 let mut files_list = self.state.workspace.files.clone();
-                let mut series_match = self.state.workspace.series.clone();
-                files::rename_files(&mut files_list, &mut series_match)?;
-                self.rescan_directory()?;
+                let series_match = self.state.workspace.series.clone();
+                let mut count = 0;
+                for (_i, (mut file, episode)) in files_list
+                    .iter_mut()
+                    .zip(series_match.episodes.iter())
+                    .enumerate()
+                {
+                    let series = &series_match.series.name;
+                    if !self.state.workspace.is_matched(episode) {
+                        files::rename_file(&mut file, &series, &episode)?;
+                        count += 1;
+                    }
+                }
+                if count > 0 {
+                    self.rescan_directory()?;
+                    self.display_popup(Dialog::info(vec!["Renamed {count} files."]));
+                }
             }
             Action::Down => self.state.workspace.list_state.select_next(),
             Action::Up => self.state.workspace.list_state.select_previous(),

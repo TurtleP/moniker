@@ -10,7 +10,7 @@ use ratatui::{
 };
 
 pub fn render(frame: &mut Frame, title: &str, text: &String) {
-    let len = text.split("\n").count() as u16 + 3;
+    let len = text.split("\n").count() as u16 + 2;
     let inner = dialog_sized(frame, Constraint::Percentage(35), Constraint::Length(len));
     let widget = Paragraph::new(text.to_string())
         .wrap(Wrap { trim: true })
@@ -22,7 +22,7 @@ pub fn render(frame: &mut Frame, title: &str, text: &String) {
 
 pub fn keypressed(action: &Action) -> PopupResult {
     match action {
-        Action::Enter => PopupResult::Close,
+        Action::Enter | Action::Back => PopupResult::Close,
         _ => PopupResult::Consume,
     }
 }

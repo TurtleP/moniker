@@ -1,76 +1,56 @@
-use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
 pub struct Config {
-    pub general: General,
-    pub api_keys: ApiKeys,
+    pub format: String,
+    pub thetvdb_key: Option<String>,
+    pub anidb_key: Option<String>,
 }
 
-const DEFAULT_FILES: &[&str; 3] = &["mkv", "mp4", "avi"];
+const ENV_FILENAME: &str = ".env";
+const DEFAULT_FORMAT: &str = "{n} - {s00e00} - {t}";
+
+pub fn user_env_path() -> Option<PathBuf> {
+    ProjectDirs::from("", "", "moniker").map(|dirs| dirs.config_dir().join(ENV_FILENAME))
+}
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            general: General {
-                files: DEFAULT_FILES.map(String::from).to_vec(),
-                format: "{n} - {s00e00} - {t}".to_string(),
-            },
-            api_keys: ApiKeys::default(),
+            format: String::from(DEFAULT_FORMAT),
+            thetvdb_key: None,
+            anidb_key: None,
         }
     }
-}
-
-#[derive(Default, Deserialize, Serialize)]
-pub struct General {
-    pub files: Vec<String>,
-    pub format: String,
-}
-
-#[derive(Default, Deserialize, Serialize)]
-#[serde(default)]
-pub struct ApiKeys {
-    pub thetvdb: String,
-    pub anidb: String,
-}
-
-const CONFIG_FILE: &str = "config.toml";
-
-fn config_path() -> Option<PathBuf> {
-    ProjectDirs::from("", "", "moniker").map(|dirs| dirs.config_dir().join(CONFIG_FILE))
 }
 
 impl Config {
     pub fn load() -> Result<Self> {
-        let Some(path) = config_path() else {
-            return Ok(Self::default());
-        };
-        if !path.exists() {
-            let config = Self::default();
-            config.save()?;
-            return Ok(config);
+        let mut config = Self::default();
+        if let Some(path) = user_env_path() {
+            if !path.exists() {
+                Self::write_defaults(&path)?;
+            }
+            dotenvy::from_filename(path)?;
+            config = envy::from_env::<Config>()?;
         }
-        let contents = fs::read_to_string(path)?;
-        Ok(toml::from_str(&contents)?)
+        Ok(config)
+    }
+
+    fn write_defaults(path: &Path) -> Result<()> {
+        let config = Self::default();
+        if let Some(path) = path.parent() {
+            std::fs::create_dir_all(path)?;
+        }
+        serde_envfile::to_file(path, &config)?;
+        Ok(())
     }
 
     pub fn format(&self) -> &String {
-        &self.general.format
-    }
-
-    pub fn save(&self) -> Result<()> {
-        let Some(path) = config_path() else {
-            return Ok(());
-        };
-        match path.parent() {
-            Some(parent) => fs::create_dir_all(parent)?,
-            None => bail!("config path has no parent directory"),
-        }
-        fs::write(path, toml::to_string(self)?)?;
-        Ok(())
+        &self.format
     }
 }

@@ -1,10 +1,18 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use ratatui::widgets::ListState;
+use tracing::info;
 
 use crate::config::Config;
 use crate::files::FileEntry;
-use crate::matchers::{Provider, SeriesMatch};
+use crate::matchers::{Episode, Provider, SeriesMatch};
+
+#[derive(PartialEq)]
+pub enum DialogMessageType {
+    Info,
+    Warn,
+}
 
 #[derive(Default, PartialEq)]
 pub enum Dialog {
@@ -37,6 +45,14 @@ impl Dialog {
         Self::Shows(Self::fresh_list())
     }
 
+    pub fn info(body: Vec<impl Into<String>>) -> Self {
+        Self::message("[ INFO ]", body)
+    }
+
+    pub fn warn(body: Vec<impl Into<String>>) -> Self {
+        Self::message("[ WARN ]", body)
+    }
+
     pub fn message(title: impl Into<String>, body: Vec<impl Into<String>>) -> Self {
         let lines: Vec<String> = body.into_iter().map(Into::into).collect();
         let body = lines.join("\n");
@@ -53,6 +69,7 @@ pub struct WorkspaceState {
     pub files: Vec<FileEntry>,
     pub series: SeriesMatch,
     pub list_state: ListState,
+    matched_names: HashSet<String>,
 }
 
 impl Default for WorkspaceState {
@@ -65,7 +82,31 @@ impl Default for WorkspaceState {
             files: Vec::new(),
             series: SeriesMatch::default(),
             list_state: ListState::default().with_selected(Some(0)),
+            matched_names: HashSet::new(),
         }
+    }
+}
+
+impl WorkspaceState {
+    fn normalize(s: &str) -> String {
+        s.chars()
+            .flat_map(|c| c.to_lowercase())
+            .filter(|c| c.is_alphanumeric())
+            .collect()
+    }
+
+    pub fn rebuild_match_index(&mut self) {
+        self.matched_names = self
+            .files
+            .iter()
+            .map(|f| Self::normalize(&f.display))
+            .collect();
+        info!("{:?}", self.matched_names);
+    }
+
+    pub fn is_matched(&self, episode: &Episode) -> bool {
+        self.matched_names
+            .contains(&Self::normalize(&episode.display))
     }
 }
 

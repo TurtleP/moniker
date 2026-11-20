@@ -17,17 +17,28 @@ mod matchers;
 use anyhow::Result;
 use clap::Parser;
 
+use crate::config::user_env_path;
+
 #[derive(Parser)]
 struct Cli {
-    #[arg(short, long)]
+    #[arg(short, long, help = "Directory to load files from")]
     dir: Option<PathBuf>,
+    #[arg(short, long, help = "Open the config directory")]
+    open_config: bool,
 }
 
 fn main() -> Result<()> {
     let _guard = logging::init_logging(Path::new("logs"));
 
     let cli = Cli::parse();
+
     let config = Config::load()?;
+
+    if cli.open_config {
+        opener::reveal(user_env_path().expect("Project Directory exists"))?;
+        return Ok(());
+    }
+
     let mut app = App::new(cli.dir, config)?;
 
     let runtime = tokio::runtime::Builder::new_current_thread()
