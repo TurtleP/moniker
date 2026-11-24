@@ -1,4 +1,7 @@
-use std::{path::PathBuf, time::Duration};
+use std::{
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use anyhow::Result;
 use crossterm::event::{
@@ -26,17 +29,13 @@ pub struct App {
 static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 
 impl App {
-    pub fn new(dir: Option<PathBuf>, config: Config) -> Result<Self> {
+    pub fn new(dir: PathBuf, config: Config) -> Result<Self> {
         let client = Client::builder()
             .user_agent(USER_AGENT)
             .timeout(Duration::from_secs(5))
             .build()?;
 
-        let mut state = AppState::new(config);
-        state.workspace.dir = match dir {
-            Some(v) => v,
-            None => std::env::current_dir()?,
-        };
+        let state = AppState::new(config);
 
         Ok(Self {
             state,
@@ -54,14 +53,26 @@ impl App {
 
     pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<()> {
         self.rescan_directory()?;
+
+        let mut tick: u64 = 0;
+        let tick_rate = Duration::from_millis(80);
+        let mut last_tick = Instant::now();
+
+        let timeout = tick_rate.saturating_sub(last_tick.elapsed());
+
         while !self.exit {
-            terminal.draw(|frame| self.render(frame))?;
-            self.handle_events().await?;
+            terminal.draw(|frame| self.render(frame, tick))?;
+            self.handle_events(timeout).await?;
+
+            if last_tick.elapsed() >= tick_rate {
+                tick = tick.wrapping_add(1);
+                last_tick = Instant::now();
+            }
         }
         Ok(())
     }
 
-    fn render(&mut self, frame: &mut Frame) {
+    fn render(&mut self, frame: &mut Frame, tick: u64) {
         let window = layout::create_layout(frame);
         layout::render_workspace(frame, window.files_list, &mut self.state.workspace);
         layout::render_rename(frame, window.rename_list, &mut self.state.workspace);
@@ -72,7 +83,11 @@ impl App {
         match &mut self.state.dialog {
             Dialog::Help => help::render(frame),
             Dialog::Sources(list_state) => provider::render(frame, list_state),
-            Dialog::Search(_) => query::render(frame, &mut self.state.search.query),
+            Dialog::Search(_) => query::render(
+                frame,
+                &mut self.state.search.query,
+                self.state.search.editing,
+            ),
             Dialog::Shows(list_state) => {
                 shows::render(frame, list_state, &self.state.search.results)
             }
@@ -129,7 +144,10 @@ impl App {
         };
         if matches!(result, PopupResult::Confirm) {
             match self.state.dialog {
-                Dialog::Search(_) => self.search_for_series().await?,
+                Dialog::Search(_) => {
+                    self.state.search.editing = false;
+                    self.search_for_series().await?;
+                }
                 Dialog::Shows(state) => {
                     if let Some(selection) = state.selected() {
                         let series = self.state.search.results[selection].clone();
@@ -154,6 +172,7 @@ impl App {
             Action::ToggleHelp => self.display_popup(Dialog::Help),
             Action::ChangeSource => self.display_popup(Dialog::sources()),
             Action::Match => {
+                self.state.search.editing = true;
                 self.state.search.query.clear();
                 self.display_popup(Dialog::matches())
             }
@@ -184,12 +203,12 @@ impl App {
         Ok(())
     }
 
-    async fn handle_events(&mut self) -> Result<()> {
-        if event::poll(Duration::from_millis(100))?
+    async fn handle_events(&mut self, timeout: Duration) -> Result<()> {
+        if event::poll(timeout)?
             && let Event::Key(key_event) = event::read()?
             && key_event.kind == KeyEventKind::Press
         {
-            if matches!(self.state.dialog, Dialog::Search(_)) {
+            if matches!(self.state.dialog, Dialog::Search(_)) && self.state.search.editing {
                 ui::query::send_input(&key_event.code, &mut self.state.search.query);
             }
             if let Some(action) = BINDINGS

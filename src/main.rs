@@ -1,10 +1,10 @@
 use std::path::{Path, PathBuf};
 
 mod app;
-use app::App;
 
 mod files;
 mod keys;
+mod popup;
 mod state;
 mod ui;
 
@@ -21,9 +21,9 @@ use crate::config::user_env_path;
 
 #[derive(Parser)]
 struct Cli {
-    #[arg(short, long, help = "Directory to load files from")]
-    dir: Option<PathBuf>,
-    #[arg(short, long, help = "Open the config directory")]
+    #[arg(long, default_value = ".", help = "Directory to load files from")]
+    dir: PathBuf,
+    #[arg(long, help = "Open the config directory")]
     open_config: bool,
 }
 
@@ -32,14 +32,13 @@ fn main() -> Result<()> {
 
     let cli = Cli::parse();
 
-    let config = Config::load()?;
-
     if cli.open_config {
         opener::reveal(user_env_path().expect("Project Directory exists"))?;
         return Ok(());
     }
 
-    let mut app = App::new(cli.dir, config)?;
+    let config = Config::load()?;
+    let mut app = app::Application::new(cli.dir);
 
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()

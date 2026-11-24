@@ -87,7 +87,7 @@ pub fn apply_config_format(format: &str, series: &mut SeriesMatch) {
     }
 }
 
-pub fn rename_file(file: &mut FileEntry, series: &str, episode: &Episode) -> Result<bool> {
+pub fn rename_file(file: &mut FileEntry, _series: &str, episode: &Episode) -> Result<bool> {
     let Some(extension) = file.path.extension() else {
         return Ok(false);
     };

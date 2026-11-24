@@ -10,13 +10,16 @@ use crate::{
     ui::{PopupResult, dialog_sized, input, panel},
 };
 
-pub fn render(frame: &mut Frame, search_query: &mut str) {
+pub fn render(frame: &mut Frame, search_query: &mut str, editing: bool) {
     let area = dialog_sized(frame, Constraint::Percentage(50), Constraint::Length(3));
-    let input = input(search_query).block(panel("Match"));
 
-    let x = (area.x + 1).saturating_add(search_query.len() as u16);
-    let cursor_position = Position::new(x, area.y + 1);
-    frame.set_cursor_position(cursor_position);
+    if editing {
+        let x = (area.x + 1).saturating_add(search_query.len() as u16);
+        let cursor_position = Position::new(x, area.y + 1);
+        frame.set_cursor_position(cursor_position);
+    }
+
+    let input = input(search_query).block(panel("Match"));
 
     frame.render_widget(Clear, area);
     frame.render_widget(input, area);

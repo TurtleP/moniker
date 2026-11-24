@@ -6,7 +6,6 @@ use ratatui::{
 };
 
 pub mod help;
-pub mod layout;
 pub mod message;
 pub mod provider;
 pub mod query;

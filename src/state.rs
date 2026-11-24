@@ -8,12 +8,6 @@ use crate::config::Config;
 use crate::files::FileEntry;
 use crate::matchers::{Episode, Provider, SeriesMatch};
 
-#[derive(PartialEq)]
-pub enum DialogMessageType {
-    Info,
-    Warn,
-}
-
 #[derive(Default, PartialEq)]
 pub enum Dialog {
     #[default]
@@ -77,11 +71,12 @@ impl Default for WorkspaceState {
         let Ok(dir) = std::env::current_dir() else {
             panic!("Failed to get current directory");
         };
+        let list_state = ListState::default().with_selected(Some(0));
         Self {
             dir,
             files: Vec::new(),
             series: SeriesMatch::default(),
-            list_state: ListState::default().with_selected(Some(0)),
+            list_state,
             matched_names: HashSet::new(),
         }
     }
@@ -114,6 +109,7 @@ impl WorkspaceState {
 pub struct SearchState {
     pub query: String,
     pub results: Vec<SeriesMatch>,
+    pub editing: bool,
 }
 
 #[derive(Default)]
