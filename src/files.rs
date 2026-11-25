@@ -5,6 +5,7 @@ use std::{
 
 use anyhow::Result;
 use infer::MatcherType;
+use ratatui::widgets::{ListItem, ListState};
 use tracing::info;
 use walkdir::WalkDir;
 
@@ -28,6 +29,69 @@ impl FileEntry {
 impl std::fmt::Display for FileEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display)
+    }
+}
+
+#[derive(Default)]
+pub struct Workspace {
+    pub files: Vec<FileEntry>,
+    pub results: SeriesMatch,
+    pub state: ListState,
+    directory: PathBuf,
+}
+
+impl Workspace {
+    pub fn new(directory: PathBuf) -> Self {
+        Self {
+            directory,
+            ..Default::default()
+        }
+    }
+
+    pub fn scan(&mut self) -> Result<()> {
+        let mut files = Vec::new();
+        let root = self.directory.display().to_string();
+
+        let filtered_dir = WalkDir::new(&root)
+            .into_iter()
+            .filter_map(|f| f.ok())
+            .filter(|e| e.file_type().is_file());
+
+        for entry in filtered_dir {
+            let entry_path = entry.path();
+            let Some(v) = infer::get_from_path(entry_path)? else {
+                continue;
+            };
+            if !matches!(v.matcher_type(), MatcherType::Video) {
+                continue;
+            }
+            let display = match entry_path.strip_prefix(&self.directory) {
+                Ok(v) => v.with_extension("").display().to_string(),
+                Err(_) => continue,
+            };
+            files.push(FileEntry::new(entry_path, display));
+        }
+        self.files = files;
+        Ok(())
+    }
+
+    pub fn files_to_list(&self) -> Vec<ListItem<'_>> {
+        let list: Vec<ListItem<'_>> = self
+            .files
+            .iter()
+            .map(|f| ListItem::from(f.to_string()))
+            .collect();
+        list.clone()
+    }
+
+    pub fn renamed_to_list(&self) -> Vec<ListItem<'_>> {
+        let list: Vec<ListItem<'_>> = self
+            .results
+            .episodes
+            .iter()
+            .map(|e| ListItem::from(e.to_string()))
+            .collect();
+        list.clone()
     }
 }
 
